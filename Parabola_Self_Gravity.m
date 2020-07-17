@@ -10,27 +10,27 @@ pkg load symbolic
 pkg load parallel
 format long
 
-au = 1.495978707E11;
-G = 6.67408E-11;
-Ag_density = 10.5E3;
-Fe_density = 7.8E3;
-Al_density = 2.7E3;
-thickness = 0.2E-6;
+au = 1.495978707E11; % astronomical unit constant
+G = 6.67408E-11; % gravitational constant 
+Ag_density = 10.5E3; % silver density
+Fe_density = 7.8E3; % iron density
+Al_density = 2.7E3; % aluminium density
+thickness = 0.2E-6; % foil thickness
+constant = 1.5; % mass factor for supporting frame of foil
 
 self_acceleration_x_abs_max = zeros(1,5);
 self_acceleration_y_abs_max = zeros(1,5);
 self_acceleration_z_abs_max = zeros(1,5);
-##F = [10,0.2.*au,0.4.*au,0.6.*au,0.8.*au];
-F = [0.2.*au,0.4.*au];
 
-for ij = [1:length(F)]; % focus of parabola
+F = [1.*au]; % focus of parabola
+
+for ij = [1:length(F)]; % loop over different focii of parabola
   
-  area_total = 4*pi*F(ij);
-  constant = 1.5;
+  area_total = 4*pi*F(ij); % area of paraboloid surface to focus
 
   %% Specify fine-grainness %%
   
-  N = 127; % course-grainness of simulation surface
+  N = 127; % course-grainness of simulation surface to sample phi in 1 degree steps
 
   %% Paraboloid Areas %%
 
@@ -75,7 +75,7 @@ for ij = [1:length(F)]; % focus of parabola
   %% Calculate Gravity %%
 
   self_gravity_x = zeros(N,N);
-  self_gravity_y = zeros(N,N);
+  % self_gravity_y = zeros(N,N); % y-calculation removed to speed computational process, as it is identical to x calculation with 90deg rotation
   self_gravity_z = zeros(N,N);
   
   for i = [1:N];
@@ -93,15 +93,15 @@ for ij = [1:length(F)]; % focus of parabola
       RHO(RHO > 1.5E10) = 0;
       
       function_X_1 = -1.*constant.*Area(i,j).*thickness.*Al_density.*Area.*thickness.*Al_density.*G.*RHO.*X1; % gravity contribution from each paraboloid area in x-direction
-      function_Y_1 = -1.*constant.*Area(i,j).*thickness.*Al_density.*Area.*thickness.*Al_density.*G.*RHO.*Y1; % gravity contribution from each paraboloid area in y-direction
+      % function_Y_1 = -1.*constant.*Area(i,j).*thickness.*Al_density.*Area.*thickness.*Al_density.*G.*RHO.*Y1; % gravity contribution from each paraboloid area in y-direction
       function_Z_1 = -1.*constant.*Area(i,j).*thickness.*Al_density.*Area.*thickness.*Al_density.*G.*RHO.*Z1; % gravity contribution from each paraboloid area in z-direction
       
       function_X_1(i,j) = 0;
-      function_Y_1(i,j) = 0;
+      % function_Y_1(i,j) = 0;
       function_Z_1(i,j) = 0;
       
       self_gravity_x(i,j) = sum(function_X_1(:)); % total gravity at point x,y,z is sum of x components
-      self_gravity_y(i,j) = sum(function_Y_1(:)); % total gravity at point x,y,z is sum of y components
+      % self_gravity_y(i,j) = sum(function_Y_1(:)); % total gravity at point x,y,z is sum of y components
       self_gravity_z(i,j) = sum(function_Z_1(:)); % total gravity at point x,y,z is sum of z components
       
     endparfor
@@ -112,8 +112,7 @@ for ij = [1:length(F)]; % focus of parabola
     self_gravity_z(:,i) = mean(self_gravity_z(:,i)); % average small float differences in z-coordinate calculations
   endparfor
   
-  self_gravity = (self_gravity_x.^2 + self_gravity_y.^2 + self_gravity_z.^2).^(0.5);
-  self_acceleration = self_gravity./(Area.*thickness.*Al_density);
+  self_gravity_y = self_gravity_x;
   
   self_acceleration_x_abs = abs(self_gravity_x)./(Area.*thickness.*Al_density);
   self_acceleration_y_abs = abs(self_gravity_y)./(Area.*thickness.*Al_density);
@@ -125,9 +124,13 @@ for ij = [1:length(F)]; % focus of parabola
   
 endfor
 
-##figure; surf(X,Y,Z,self_gravity_x); colormap('jet'); shading interp; colorbar; axis image
-##figure; surf(Y,X,Z,self_gravity_x); colormap('jet'); shading interp; colorbar; axis image
-figure; surf(X,Y,Z,self_gravity_z); colormap('jet'); shading interp; colorbar; axis image
+figure; surf(X,Y,Z,self_acceleration_x_abs); shading interp; colorbar; axis image
+figure; surf(Y,X,Z,self_acceleration_y_abs); shading interp; colorbar; axis image
+figure; surf(X,Y,Z,self_acceleration_z_abs); shading interp; colorbar; axis image
+
+figure; surf(X,Y,Z,self_gravity_x); shading interp; colorbar; axis image
+figure; surf(Y,X,Z,self_gravity_y); shading interp; colorbar; axis image
+figure; surf(X,Y,Z,self_gravity_z); shading interp; colorbar; axis image
 
 self_acceleration_x_abs_max
 self_acceleration_y_abs_max
